@@ -71,7 +71,7 @@ RouteModel::Node *RoutePlanner::NextNode() {
 // - The returned vector should be in the correct order: the start node should be the first element
 //   of the vector, the end node should be the last element.
 
-std::vector<RouteModel::Node> &&RoutePlanner::ConstructFinalPath(RouteModel::Node *current_node) {
+std::vector<RouteModel::Node> RoutePlanner::ConstructFinalPath(RouteModel::Node *current_node) {
     // Create path_found vector
     distance = 0.0f;
     std::vector<RouteModel::Node> path_found;
@@ -79,15 +79,15 @@ std::vector<RouteModel::Node> &&RoutePlanner::ConstructFinalPath(RouteModel::Nod
     auto node = current_node;
     while (nullptr != node->parent) {
         distance += node->distance(*node->parent);
-        path_found.push_back(*node);
+        path_found.insert(std::begin(path_found), *node);
         node = node->parent;
     }
 
     // add the starting node to the path
-    path_found.push_back(*node);
+    path_found.insert(std::begin(path_found), *node);
 
     distance *= m_Model.MetricScale(); // Multiply the distance by the scale of the map to get meters.
-    return std::move(path_found);
+    return path_found;
 }
 
 
@@ -99,7 +99,7 @@ std::vector<RouteModel::Node> &&RoutePlanner::ConstructFinalPath(RouteModel::Nod
 // - Store the final path in the m_Model.path attribute before the method exits. This path will then be displayed on the map tile.
 
 void RoutePlanner::AStarSearch() {
-    RouteModel::Node *current_node = start_node;
+    RouteModel::Node *current_node = nullptr;
 
     open_list.push_back(start_node);
     start_node->visited = true;
@@ -109,7 +109,7 @@ void RoutePlanner::AStarSearch() {
 
         // Check if we are done
         if (current_node == end_node) {
-            m_Model.path = std::move(ConstructFinalPath(current_node));
+            m_Model.path = ConstructFinalPath(current_node);
             break;
         }
 
